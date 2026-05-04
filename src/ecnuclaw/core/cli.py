@@ -13,8 +13,6 @@ _CONFIG_FILE = _CONFIG_DIR / "config.json"
 _MODEL_OPTIONS = [
     {"name": "deepseek", "adapter_class": "ecnuclaw.adapters.deepseek.DeepSeekAdapter",
      "env_key": "DEEPSEEK_API_KEY", "label": "DeepSeek（深度求索）", "desc": "聪明实惠，推荐先用这个"},
-    {"name": "qwen", "adapter_class": "ecnuclaw.adapters.qwen.QwenAdapter",
-     "env_key": "QWEN_API_KEY", "label": "通义千问（阿里云）", "desc": "中文理解特别强，语文写作首选"},
     {"name": "glm", "adapter_class": "ecnuclaw.adapters.glm.GLMAdapter",
      "env_key": "GLM_API_KEY", "label": "智谱清言（智谱AI）", "desc": "综合能力强，速度快"},
     {"name": "kimi", "adapter_class": "ecnuclaw.adapters.kimi.KimiAdapter",
@@ -22,6 +20,8 @@ _MODEL_OPTIONS = [
     {"name": "doubao", "adapter_class": "ecnuclaw.adapters.doubao.DoubaoAdapter",
      "env_key": "DOUBAO_API_KEY", "label": "豆包（字节跳动/火山引擎）", "desc": "聊天自然，适合情感陪伴",
      "extra_env": "DOUBAO_ENDPOINT_ID"},
+    {"name": "qwen", "adapter_class": "ecnuclaw.adapters.qwen.QwenAdapter",
+     "env_key": "QWEN_API_KEY", "label": "通义千问（阿里云）", "desc": "中文理解特别强，语文写作首选"},
     {"name": "seed", "adapter_class": "ecnuclaw.adapters.doubao.DoubaoAdapter",
      "env_key": "SEED_API_KEY", "label": "Seed（火山引擎）", "desc": "火山引擎最新模型，推理能力强",
      "extra_env": "SEED_ENDPOINT_ID", "extra_env_label": "终端地址"},
