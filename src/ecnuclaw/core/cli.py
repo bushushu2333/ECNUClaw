@@ -12,22 +12,39 @@ _CONFIG_FILE = _CONFIG_DIR / "config.json"
 # 国内 AI 模型列表
 _MODEL_OPTIONS = [
     {"name": "deepseek", "adapter_class": "ecnuclaw.adapters.deepseek.DeepSeekAdapter",
-     "env_key": "DEEPSEEK_API_KEY", "label": "DeepSeek（深度求索）", "desc": "聪明实惠，推荐先用这个"},
+     "env_key": "DEEPSEEK_API_KEY", "base_env": "DEEPSEEK_BASE_URL",
+     "default_model": "deepseek-chat",
+     "label": "DeepSeek（深度求索）", "desc": "聪明实惠，推荐先用这个"},
     {"name": "glm", "adapter_class": "ecnuclaw.adapters.glm.GLMAdapter",
-     "env_key": "GLM_API_KEY", "label": "智谱清言（智谱AI）", "desc": "综合能力强，速度快"},
+     "env_key": "GLM_API_KEY", "base_env": "GLM_BASE_URL",
+     "default_model": "glm-5.1",
+     "label": "智谱清言（智谱AI）", "desc": "综合能力强，速度快"},
     {"name": "kimi", "adapter_class": "ecnuclaw.adapters.kimi.KimiAdapter",
-     "env_key": "MOONSHOT_API_KEY", "label": "Kimi（月之暗面）", "desc": "长文本能力强，适合阅读理解"},
+     "env_key": "MOONSHOT_API_KEY", "base_env": "KIMI_BASE_URL",
+     "default_model": "K2.6",
+     "label": "Kimi（月之暗面）", "desc": "长文本能力强，适合阅读理解"},
     {"name": "doubao", "adapter_class": "ecnuclaw.adapters.doubao.DoubaoAdapter",
-     "env_key": "DOUBAO_API_KEY", "label": "豆包（字节跳动/火山引擎）", "desc": "聊天自然，适合情感陪伴",
+     "env_key": "DOUBAO_API_KEY", "base_env": "DOUBAO_BASE_URL",
+     "default_model": "",
+     "label": "豆包（字节跳动/火山引擎）", "desc": "聊天自然，适合情感陪伴",
      "extra_env": "DOUBAO_ENDPOINT_ID"},
     {"name": "qwen", "adapter_class": "ecnuclaw.adapters.qwen.QwenAdapter",
-     "env_key": "QWEN_API_KEY", "label": "通义千问（阿里云）", "desc": "中文理解特别强，语文写作首选"},
+     "env_key": "QWEN_API_KEY", "base_env": "QWEN_BASE_URL",
+     "default_model": "qwen3-max",
+     "label": "通义千问（阿里云）", "desc": "中文理解特别强，语文写作首选"},
     {"name": "seed", "adapter_class": "ecnuclaw.adapters.doubao.DoubaoAdapter",
-     "env_key": "SEED_API_KEY", "label": "Seed（火山引擎）", "desc": "火山引擎最新模型，推理能力强",
+     "env_key": "SEED_API_KEY", "base_env": "DOUBAO_BASE_URL",
+     "default_model": "",
+     "label": "Seed（火山引擎）", "desc": "火山引擎最新模型，推理能力强",
      "extra_env": "SEED_ENDPOINT_ID", "extra_env_label": "终端地址"},
     {"name": "innoSpark", "adapter_class": "ecnuclaw.adapters.innoSpark.InnoSparkAdapter",
-     "env_key": "INNOSPARK_API_KEY", "label": "启创教育大模型", "desc": "专门为教育场景设计"},
+     "env_key": "INNOSPARK_API_KEY", "base_env": "INNOSPARK_BASE_URL",
+     "default_model": "innoSpark",
+     "label": "启创教育大模型", "desc": "专门为教育场景设计"},
 ]
+
+# URL 包含这些关键词时自动切换为 Anthropic Messages API 格式
+_ANTHROPIC_URL_HINTS = ("anthropic", "/coding", "claude")
 
 # 对话风格选项
 _STYLE_OPTIONS = [
@@ -63,14 +80,46 @@ def _save_config(cfg):
     _CONFIG_FILE.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _create_adapter(model_config, api_key=None):
-    module_path, class_name = model_config["adapter_class"].rsplit(".", 1)
+def _is_anthropic_url(url):
+    return any(hint in url.lower() for hint in _ANTHROPIC_URL_HINTS)
+
+
+def _create_adapter(model_config, api_key=None, base_url=None, model=None):
     import importlib
+
+    effective_url = base_url
+    if not effective_url and model_config.get("base_env"):
+        effective_url = os.environ.get(model_config["base_env"], "")
+
+    # URL 命中 Anthropic 关键词 → 自动用 Anthropic 兼容适配器
+    if effective_url and _is_anthropic_url(effective_url):
+        from ecnuclaw.adapters.anthropic_compat import AnthropicCompatAdapter
+        kwargs = {}
+        if api_key:
+            kwargs["api_key"] = api_key
+        if effective_url:
+            kwargs["base_url"] = effective_url
+        if model:
+            kwargs["model"] = model
+        elif model_config.get("default_model"):
+            kwargs["model"] = model_config["default_model"]
+        return AnthropicCompatAdapter(**kwargs)
+
+    # 走默认的 OpenAI 兼容适配器
+    module_path, class_name = model_config["adapter_class"].rsplit(".", 1)
     module = importlib.import_module(module_path)
     cls = getattr(module, class_name)
     kwargs = {}
     if api_key:
         kwargs["api_key"] = api_key
+    if base_url:
+        kwargs["base_url"] = base_url
+    elif model_config.get("base_env"):
+        env_url = os.environ.get(model_config["base_env"], "")
+        if env_url:
+            kwargs["base_url"] = env_url
+    if model:
+        kwargs["model"] = model
     if model_config["name"] in ("doubao", "seed"):
         env_key = model_config.get("extra_env", "")
         endpoint = os.environ.get(env_key, "")
@@ -83,7 +132,12 @@ def _scan_model_adapters():
     adapters = {}
     default = None
     cfg = _load_config()
-    saved_model = cfg.get("model", {}).get("default", "")
+    model_cfg = cfg.get("model", {})
+    saved_model = model_cfg.get("default", "")
+    saved_url = model_cfg.get("base_url", "")
+    saved_model_name = model_cfg.get("model_name", "")
+    saved_api_key = model_cfg.get("api_key", "")
+
     for mc in _MODEL_OPTIONS:
         key = os.environ.get(mc["env_key"], "")
         if mc.get("extra_env"):
@@ -91,13 +145,19 @@ def _scan_model_adapters():
         if not key:
             continue
         try:
-            adapter = _create_adapter(mc)
+            # 如果是用户保存的模型，传入自定义 URL、模型名、key
+            is_saved = mc["name"] == saved_model
+            adapter = _create_adapter(
+                mc,
+                api_key=saved_api_key if is_saved else None,
+                base_url=saved_url if is_saved else None,
+                model=saved_model_name if is_saved else None,
+            )
             adapters[mc["name"]] = adapter
             if default is None:
                 default = mc["name"]
         except Exception:
             continue
-    # 优先用用户保存的默认模型
     if saved_model and saved_model in adapters:
         default = saved_model
     return adapters, default
@@ -107,7 +167,7 @@ def _input(prompt, default=""):
     try:
         val = input(prompt).strip()
         return val if val else default
-    except (EOFError, KeyboardInterrupt):
+    except EOFError:
         return default
 
 
@@ -147,7 +207,16 @@ def _print_hint(console, text):
 # ── Setup Wizard ──────────────────────────────────────────
 
 def run_setup_wizard(console):
-    """完整的初始化向导"""
+    """完整的初始化向导，Ctrl+C 随时退出"""
+    try:
+        return _run_setup_wizard_inner(console)
+    except KeyboardInterrupt:
+        console.print("\n\n  [yellow]已退出设置向导，下次再配置吧～[/]")
+        console.print()
+        return None
+
+
+def _run_setup_wizard_inner(console):
     cfg = _load_config()
     total_steps = 4
 
@@ -161,72 +230,124 @@ def run_setup_wizard(console):
     console.print()
 
     # ── Step 1: 选择 AI 大脑 ──
-    _print_step(console, 1, total_steps, "选择 AI 大脑")
-    console.print("  ECNUClaw 需要连接一个 AI 大脑才能回答你的问题")
-    _print_hint(console, "（这一步通常由老师或家长帮忙设置）")
-    console.print()
-    console.print("  可选的 AI 大脑：")
-    console.print()
-    for i, mc in enumerate(_MODEL_OPTIONS, 1):
-        console.print(f"    [bold]{i}.[/] [cyan]{mc['label']}[/]")
-        console.print(f"       {mc['desc']}")
-    console.print()
+    model_connected = False
+    while not model_connected:
+        _print_step(console, 1, total_steps, "选择 AI 大脑")
+        console.print("  ECNUClaw 需要连接一个 AI 大脑才能回答你的问题")
+        _print_hint(console, "（这一步通常由老师或家长帮忙设置）")
+        console.print()
+        console.print("  可选的 AI 大脑：")
+        console.print()
+        for i, mc in enumerate(_MODEL_OPTIONS, 1):
+            console.print(f"    [bold]{i}.[/] [cyan]{mc['label']}[/]")
+            console.print(f"       {mc['desc']}")
+        console.print()
 
-    total = len(_MODEL_OPTIONS)
-    choice = _input(f"  请输入编号 (1-{total})，直接回车跳过：")
-    if choice:
+        total = len(_MODEL_OPTIONS)
+        choice = _input(f"  请输入编号 (1-{total})，直接回车跳过：")
+        if not choice:
+            console.print("  [yellow]跳过了 AI 大脑设置，稍后可以用 [bold]/设置[/bold] 重新配置[/]")
+            break
         try:
             idx = int(choice) - 1
-            if 0 <= idx < total:
-                mc = _MODEL_OPTIONS[idx]
-                console.print(f"\n  你选择了 [cyan bold]{mc['label']}[/]")
-                key = _input("  请输入密钥：")
-                # 清理：去掉 Unicode 引号、空格等非常规字符
-                if key:
-                    key = key.encode("ascii", errors="ignore").decode("ascii").strip()
-                if key:
-                    os.environ[mc["env_key"]] = key
-                    if mc.get("extra_env"):
-                        extra_label = mc.get("extra_env_label", "终端地址")
-                        extra = _input(f"  还需要填写{extra_label}（没有可跳过）：")
-                        if extra:
-                            extra = extra.encode("ascii", errors="ignore").decode("ascii").strip()
-                            os.environ[mc["extra_env"]] = extra
-
-                    # 真实验证：用 key 调一次模型
-                    console.print("  [dim]正在验证密钥...[/]")
-                    verified = False
-                    try:
-                        adapter = _create_adapter(mc, api_key=key)
-                        resp = adapter.generate(
-                            messages=[{"role": "user", "content": "hi"}],
-                            max_tokens=5,
-                        )
-                        verified = bool(resp.content is not None)
-                    except Exception as e:
-                        err_msg = str(e)[:80]
-                        console.print(f"  [red]连接失败：{err_msg}[/]")
-
-                    if verified:
-                        cfg.setdefault("model", {})["default"] = mc["name"]
-                        cfg.setdefault("model", {})["api_key"] = key
-                        env_file = _CONFIG_DIR / ".env"
-                        _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-                        env_lines = [f"{mc['env_key']}={key}"]
-                        if mc.get("extra_env") and os.environ.get(mc["extra_env"]):
-                            env_lines.append(f"{mc['extra_env']}={os.environ[mc['extra_env']]}")
-                        env_file.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
-                        _print_ok(console, f"{mc['label']} 已连接！")
-                    else:
-                        console.print("  [yellow]密钥验证没通过，请检查后重新设置（输入 /设置 重试）[/]")
-                else:
-                    console.print("  [yellow]跳过了密钥输入，稍后可以重新设置[/]")
-            else:
-                console.print("  [yellow]编号不对，跳过[/]")
         except ValueError:
             console.print("  [yellow]跳过模型设置[/]")
-    else:
-        console.print("  [yellow]跳过了 AI 大脑设置，稍后可以用 [bold]/设置[/bold] 重新配置[/]")
+            break
+        if not (0 <= idx < total):
+            console.print("  [yellow]编号不对，跳过[/]")
+            break
+
+        mc = _MODEL_OPTIONS[idx]
+
+        # 密钥输入 + 验证循环（同一个模型可以重试）
+        while not model_connected:
+            console.print(f"\n  你选择了 [cyan bold]{mc['label']}[/]")
+
+            # 先问 API 地址（显示默认值，回车用默认）
+            default_url = ""
+            try:
+                module_path, class_name = mc["adapter_class"].rsplit(".", 1)
+                import importlib
+                cls = getattr(importlib.import_module(module_path), class_name)
+                default_url = cls.DEFAULT_BASE_URL
+            except Exception:
+                pass
+            saved_url = cfg.get("model", {}).get("base_url", "")
+            hint_url = saved_url or os.environ.get(mc.get("base_env", ""), "") or default_url
+            console.print(f"  [dim]默认 API 地址：{hint_url}[/]")
+            url_input = _input("  API 地址（回车用默认，输入 n 换模型）：")
+            if url_input.strip().lower() == "n":
+                break  # 回到模型选择
+            if url_input.strip():
+                custom_url = url_input.strip()
+            else:
+                custom_url = hint_url
+
+            # 再问密钥
+            key = _input("  请输入密钥（直接回车换一个模型）：")
+            if key:
+                key = key.encode("ascii", errors="ignore").decode("ascii").strip()
+            if not key:
+                break  # 回到模型选择
+
+            # 如果 URL 被改过（不是默认），问一下模型名
+            custom_model = None
+            url_changed = custom_url and custom_url != default_url
+            if url_changed:
+                saved_model_name = cfg.get("model", {}).get("model_name", "")
+                hint_model = saved_model_name or mc.get("default_model", "")
+                if hint_model:
+                    console.print(f"  [dim]默认模型：{hint_model}[/]")
+                model_input = _input("  模型名称（回车用默认）：")
+                custom_model = model_input.strip() if model_input.strip() else hint_model
+
+            os.environ[mc["env_key"]] = key
+            if custom_url and custom_url != default_url:
+                os.environ[mc.get("base_env", "")] = custom_url
+            if mc.get("extra_env"):
+                extra_label = mc.get("extra_env_label", "终端地址")
+                extra = _input(f"  还需要填写{extra_label}（没有可跳过）：")
+                if extra:
+                    extra = extra.encode("ascii", errors="ignore").decode("ascii").strip()
+                    os.environ[mc["extra_env"]] = extra
+
+            # 真实验证：用 key 调一次模型
+            console.print("  [dim]正在验证密钥...[/]")
+            try:
+                adapter = _create_adapter(mc, api_key=key, base_url=custom_url, model=custom_model)
+                resp = adapter.generate(
+                    messages=[{"role": "user", "content": "hi"}],
+                    max_tokens=10,
+                )
+                verified = bool(resp.content is not None)
+            except Exception as e:
+                verified = False
+                err_msg = str(e)[:120]
+                console.print(f"  [red]连接失败：{err_msg}[/]")
+
+            if verified:
+                cfg.setdefault("model", {})["default"] = mc["name"]
+                cfg.setdefault("model", {})["api_key"] = key
+                cfg.setdefault("model", {})["base_url"] = custom_url
+                if custom_model:
+                    cfg.setdefault("model", {})["model_name"] = custom_model
+                env_file = _CONFIG_DIR / ".env"
+                _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+                env_lines = [f"{mc['env_key']}={key}"]
+                if custom_url and custom_url != default_url:
+                    env_lines.append(f"ECNUCLAW_BASE_URL={custom_url}")
+                if custom_model:
+                    env_lines.append(f"ECNUCLAW_MODEL={custom_model}")
+                if mc.get("extra_env") and os.environ.get(mc["extra_env"]):
+                    env_lines.append(f"{mc['extra_env']}={os.environ[mc['extra_env']]}")
+                env_file.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
+                _print_ok(console, f"{mc['label']} 已连接！")
+                model_connected = True
+            else:
+                console.print("  [yellow]密钥验证没通过[/]")
+                retry = _input("  重新输入按回车，换模型输入 n：")
+                if retry.lower() == "n":
+                    break  # 回到模型选择
 
     # ── Step 2: 选择对话风格 ──
     _print_step(console, 2, total_steps, "选择对话风格")
@@ -401,7 +522,11 @@ def main():
         from rich.console import Console
         console = Console()
         _print_banner(console)
-        run_setup_wizard(console)
+        try:
+            run_setup_wizard(console)
+        except KeyboardInterrupt:
+            console.print("\n\n  [yellow]再见！[/]")
+            console.print()
         return
 
     from prompt_toolkit import PromptSession
@@ -420,7 +545,12 @@ def main():
 
     memory = None
     if needs_setup:
-        memory = run_setup_wizard(console)
+        try:
+            memory = run_setup_wizard(console)
+        except KeyboardInterrupt:
+            console.print("\n\n  [yellow]再见！[/]")
+            console.print()
+            return
         cfg = _load_config()
 
     # ── 3. 扫描模型 ──
@@ -579,19 +709,30 @@ def main():
                 console.print()
                 continue
 
+            collected = []
             try:
-                response = active_agent.chat(user_input)
                 console.print()
-                console.print(Markdown(response))
+                from rich.live import Live
+                from rich.text import Text
+                with Live(Text(), console=console, refresh_per_second=8, transient=True) as live:
+                    for chunk in active_agent.chat_stream(user_input):
+                        collected.append(chunk)
+                        live.update(Text("".join(collected)))
+                console.print(Markdown("".join(collected)))
                 console.print()
             except KeyboardInterrupt:
-                # 模型正在回答时按 Ctrl+C，中断回答但不退出
+                if collected:
+                    console.print(Markdown("".join(collected)))
                 console.print("\n  [yellow]已中断回答[/]")
                 console.print()
             except Exception as e:
-                console.print(f"\n  [red]回答出了点问题：{e}[/]")
-                console.print("  [dim]你可以重试、输入 /重置 清空对话、或输入 /设置 换个模型[/]")
-                console.print()
+                if collected:
+                    console.print(Markdown("".join(collected)))
+                    console.print()
+                else:
+                    console.print(f"\n  [red]回答出了点问题：{e}[/]")
+                    console.print("  [dim]你可以重试、输入 /重置 清空对话、或输入 /设置 换个模型[/]")
+                    console.print()
 
         except KeyboardInterrupt:
             ctrl_c_count += 1

@@ -6,11 +6,13 @@ import os
 class KimiAdapter(ModelAdapter):
     """月之暗面 Kimi 模型适配器"""
 
-    def __init__(self, api_key=None, model="moonshot-v1-8k", **kwargs):
+    DEFAULT_BASE_URL = "https://api.moonshot.cn/v1"
+
+    def __init__(self, api_key=None, base_url=None, model="K2.6", **kwargs):
         super().__init__(
             "kimi",
             api_key or os.getenv("MOONSHOT_API_KEY", ""),
-            "https://api.moonshot.cn/v1",
+            base_url or os.getenv("KIMI_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.model = model

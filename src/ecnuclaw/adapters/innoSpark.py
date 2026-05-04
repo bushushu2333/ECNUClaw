@@ -7,11 +7,13 @@ from ecnuclaw.adapters.base import ModelAdapter, ModelResponse, ModelAdapterErro
 
 
 class InnoSparkAdapter(ModelAdapter):
-    def __init__(self, api_key: str = None, base_url: str = "https://api.innospark.ai/v1", **kwargs):
+    DEFAULT_BASE_URL = "https://api.innospark.ai/v1"
+
+    def __init__(self, api_key: str = None, base_url: str = None, **kwargs):
         super().__init__(
             "innoSpark",
             api_key or os.getenv("INNOSPARK_API_KEY", ""),
-            base_url,
+            base_url or os.getenv("INNOSPARK_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)

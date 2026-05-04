@@ -6,11 +6,13 @@ import os
 class GLMAdapter(ModelAdapter):
     """智谱 GLM 系列模型适配器"""
 
-    def __init__(self, api_key=None, model="glm-4-flash", **kwargs):
+    DEFAULT_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+
+    def __init__(self, api_key=None, base_url=None, model="glm-5.1", **kwargs):
         super().__init__(
             "glm",
             api_key or os.getenv("GLM_API_KEY", ""),
-            "https://open.bigmodel.cn/api/paas/v4",
+            base_url or os.getenv("GLM_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.model = model

@@ -29,8 +29,6 @@ dependencies = [
     "pydantic>=2.0",
     "rich>=13.0",
     "prompt_toolkit>=3.0",
-    "transformers>=4.40.0",
-    "torch>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +36,10 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.4.0",
+]
+nlp = [
+    "transformers>=4.40.0",
+    "torch>=2.0.0",
 ]
 
 [project.scripts]

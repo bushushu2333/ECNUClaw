@@ -7,11 +7,13 @@ from ecnuclaw.adapters.base import ModelAdapter, ModelResponse, ModelAdapterErro
 
 
 class DeepSeekAdapter(ModelAdapter):
-    def __init__(self, api_key: str = None, model: str = "deepseek-chat", **kwargs):
+    DEFAULT_BASE_URL = "https://api.deepseek.com/v1"
+
+    def __init__(self, api_key: str = None, base_url: str = None, model: str = "deepseek-chat", **kwargs):
         super().__init__(
             "deepseek",
             api_key or os.getenv("DEEPSEEK_API_KEY", ""),
-            "https://api.deepseek.com/v1",
+            base_url or os.getenv("DEEPSEEK_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.model = model

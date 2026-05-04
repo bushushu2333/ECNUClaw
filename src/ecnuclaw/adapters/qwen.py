@@ -7,11 +7,13 @@ from ecnuclaw.adapters.base import ModelAdapter, ModelResponse, ModelAdapterErro
 
 
 class QwenAdapter(ModelAdapter):
-    def __init__(self, api_key: str = None, model: str = "qwen-plus", **kwargs):
+    DEFAULT_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+
+    def __init__(self, api_key: str = None, base_url: str = None, model: str = "qwen3-max", **kwargs):
         super().__init__(
             "qwen",
             api_key or os.getenv("QWEN_API_KEY", ""),
-            "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            base_url or os.getenv("QWEN_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.model = model

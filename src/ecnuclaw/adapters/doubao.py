@@ -7,11 +7,13 @@ from ecnuclaw.adapters.base import ModelAdapter, ModelResponse, ModelAdapterErro
 
 
 class DoubaoAdapter(ModelAdapter):
-    def __init__(self, api_key: str = None, endpoint_id: str = None, **kwargs):
+    DEFAULT_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+
+    def __init__(self, api_key: str = None, base_url: str = None, endpoint_id: str = None, **kwargs):
         super().__init__(
             "doubao",
             api_key or os.getenv("DOUBAO_API_KEY", ""),
-            "https://ark.cn-beijing.volces.com/api/v3",
+            base_url or os.getenv("DOUBAO_BASE_URL", self.DEFAULT_BASE_URL),
             **kwargs,
         )
         self.endpoint_id = endpoint_id or os.getenv("DOUBAO_ENDPOINT_ID", "")
