@@ -1,8 +1,8 @@
-# LebotClaw 🐾
+# ECNUClaw
 
-**A Safe, Low-Barrier CLI Intelligent Study Companion for K-12 Learners**
+**A Learner-Profiled Intelligent Study Companion Framework for K-12 Personalized Education**
 
-面向 K-12 学生的终端智能学伴框架 — 融合"智能学伴"理念，让每个孩子都能拥有一个安全、可靠、低门槛的 AI 学习伙伴，记住你、理解你、陪你一起成长。
+基于张治教授「数字画像 + 教育大脑 + 人机协同智商」理论的 K-12 智能学伴框架，由华东师范大学智能教育实验室研发。
 
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -10,226 +10,193 @@
 
 ---
 
-## Why LebotClaw?
+## Theoretical Foundations
 
-| Principle | How We Do It |
-|-----------|-------------|
-| **Education-First Safety** | Content filtering, age-appropriate responses, topic boundary enforcement — students only discuss learning |
-| **Intelligent Study Companion** | Not a chatbot that gives answers — a study buddy that guides you to think, step by step, with patience and encouragement |
-| **Low Barrier** | 4-step setup wizard, all-Chinese interface, no technical knowledge needed — works right out of the box |
-| **Persistent Understanding** | Remembers your name, grade, strengths, and weaknesses across sessions — gets to know you better over time |
-| **Reliable Architecture** | Tool calling protocol, structured memory, intent routing, and multi-agent orchestration — built on proven patterns |
+ECNUClaw is grounded in three core theories developed by Prof. Zhi Zhang (张治) and colleagues at ECNU's Intelligent Education Laboratory:
 
-## Features
+### 1. Digital Portrait Three-Layer Framework (数字画像三层框架, 2021)
 
-- **Intelligent Study Companion** — 数学问伴、语文问伴、科学问伴、万能问伴，4 个学科伙伴自动路由
-- **Safe Education Memory** — SQLite 驱动的 4 类教育记忆（学生画像、学习进度、会话摘要、技能沉淀）
-- **HEADS Prompt Templates** — K-12 专属的温暖、鼓励式教学提示词，不直接给答案，引导思考
-- **Tool Calling Framework** — 统一的工具调用协议，内置计算器、字典、知识库、计时器 4 个教育工具
-- **Intent Router** — 意图识别 + 自动路由，学生不需要手动切换，问什么问题就找什么伙伴
-- **Task Planner** — 5 套教育规划模板（复习/学习/练习/写作/通用），分步引导
-- **Skill Library** — 成功教学链路自动沉淀为可复用技能模板
-- **Multi-Model Adapters** — DeepSeek / Qwen / GLM / Kimi / Doubao / Seed / InnoSpark 7 个国内模型适配器
-- **Setup Wizard** — 4 步初始化向导（选模型、选风格、选详细程度、填写学生信息），零门槛上手
+> 张治 等. 基于数字画像的综合素质评价：框架、指标、模型与应用. 中国电化教育, 2021(8): 25-33.
+
+ECNUClaw implements this framework through a **5-dimension learner profile** that replaces static test-score-driven assessment with dynamic, data-driven, multi-dimensional profiling:
+
+| Layer | ECNUClaw Implementation |
+|-------|------------------------|
+| **Indicator System Layer** | 5 profile dimensions with structured indicators (cognitive, behavioral, emotional, metacognitive, contextual) |
+| **Data Practice Layer** | Multi-source data extraction from conversations — dialogue behavior, tool usage, error patterns, emotional signals, metacognitive markers |
+| **Digital Portrait Layer** | SQLite-persisted `LearnerProfile` with dynamic updates across sessions, plus structured summary output |
+
+### 2. Education Brain Model (教育大脑模型, 2022)
+
+> 张治, 徐冰冰. 人工智能教育大脑的生态架构和应用场景. 开放教育研究, 2022(02): 64-72.
+
+ECNUClaw's architecture mirrors the three-layer brain-inspired computing model:
+
+| Brain Layer | Function | ECNUClaw Module |
+|------------|----------|-----------------|
+| **Sensory Nervous System** | Multi-source data perception | CLI interaction + Intent Router + conversation signal extraction |
+| **Central Nervous System** | AI analysis + profile construction + pedagogical decision | Agent + LearnerProfile + Planner + adaptive strategy generation |
+| **Motor Nervous System** | Personalized output + adaptive intervention | HEADS Prompt Templates + profile-driven adaptive strategies + tool calling |
+
+### 3. Human-AI Collaborative IQ (人机协同智商, 2023)
+
+> 张治. ChatGPT/生成式人工智能重塑教育的底层逻辑和可能路径. 华东师范大学学报(教育科学版), 2023, 41(7): 131-142.
+
+ECNUClaw is designed not to replace learning, but to enhance learners' thinking and metacognitive abilities through:
+- Socratic questioning rather than direct answer-giving
+- Profile-aware scaffolding that adapts to cognitive level (Bloom's taxonomy)
+- Metacognitive reflection prompts embedded in teaching strategies
+- Goal: cultivating the learner's ability to **collaborate with AI to solve problems**
+
+---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────┐
-│                  CLI Interface                    │
-│          (prompt_toolkit + rich)                  │
-├──────────────────────────────────────────────────┤
-│              Intent Router                        │
-│   (关键词匹配 → 意图分类 → Agent路由 → 模型路由)    │
-├──────────────────────────────────────────────────┤
-│  AgentRegistry                                    │
-│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐            │
-│  │ Math │ │Chinese│ │Science│ │General│           │
-│  └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘            │
-│     │        │        │        │                  │
-│  ┌──┴────────┴────────┴────────┴──┐              │
-│  │         ToolRegistry            │              │
-│  │ calculator dictionary knowledge │              │
-│  │          timer                  │              │
-│  └─────────────────────────────────┘              │
-├──────────────────────────────────────────────────┤
-│  MemoryStore (SQLite)  │  SkillLibrary (JSON)    │
-│  · Student Profile     │  · Teaching Templates   │
-│  · Learning Progress   │  · Auto-Extract Skills  │
-│  · Session Summary     │                         │
-│  · Skill Memory        │                         │
-├──────────────────────────────────────────────────┤
-│  Planner           │  ModelAdapters              │
-│  · Decompose       │  · DeepSeek / Qwen / GLM    │
-│  · Replan          │  · Kimi / Doubao / Seed     │
-│  · 5 Templates     │  · InnoSpark                │
-├──────────────────────────────────────────────────┤
-│            Assessment Module                      │
-│  知识准确性 │ 交互自然度 │ 个性化适配度             │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Education Brain Architecture               │
+│                 (张治「教育大脑」三层架构)                       │
+├──────────────────────────────────────────────────────────────┤
+│  Motor Layer (类脑运动神经系统)                                │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  HEADS Templates + Adaptive Strategies                  │ │
+│  │  Profile-driven: detail level / guidance strength /     │ │
+│  │  encouragement frequency / Bloom scaffolding             │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────┤
+│  Central Layer (类脑中枢神经系统)                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
+│  │   Agent      │  │   Learner    │  │     Planner       │  │
+│  │  Registry    │  │   Profile    │  │  5 Teaching Plans │  │
+│  │ Math/Chinese │  │  5 Dimensions│  │  + Replan         │  │
+│  │ Science/Gen  │  │  + Auto-     │  │                   │  │
+│  │              │  │    Update    │  │                   │  │
+│  └──────┬───────┘  └──────┬───────┘  └───────────────────┘  │
+│         │                 │                                   │
+│  ┌──────┴─────────────────┴──────────────────────────────┐   │
+│  │              Tool Calling Framework                     │   │
+│  │   calculator │ dictionary │ knowledge │ timer           │   │
+│  └────────────────────────────────────────────────────────┘   │
+├──────────────────────────────────────────────────────────────┤
+│  Sensory Layer (类脑感知神经系统)                              │
+│  ┌─────────────────────────────────────────────────────────┐ │
+│  │  CLI + Intent Router + Signal Extraction                │ │
+│  │  Cognitive signals │ Emotional markers │ Behavioral data│ │
+│  │  Metacognitive cues │ Contextual info                    │ │
+│  └─────────────────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────┤
+│              Assessment Module                                │
+│  Cognitive │ Behavioral │ Emotional │ Metacognitive           │
+│  + Teaching Quality: Accuracy │ Naturalness │ Personalization│
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Quick Start
+---
 
-### Installation
+## 5-Dimension Learner Profile
+
+ECNUClaw maintains a dynamic learner profile across 5 dimensions, automatically extracted from conversations:
+
+| Dimension | Indicators | Data Sources |
+|-----------|-----------|--------------|
+| **Cognitive** | Knowledge state, Bloom's taxonomy level, prior knowledge, knowledge tracing | Question patterns, error analysis, topic coverage |
+| **Behavioral** | Question frequency, session duration, tool usage, interaction patterns | Conversation logs, tool call records |
+| **Emotional** | Current mood, motivation level, self-efficacy, frustration count | Sentiment markers (困惑/挫折/兴奋), engagement signals |
+| **Metacognitive** | Self-regulation, preferred learning strategy, reflection ability | Strategy choice keywords, reflection markers |
+| **Contextual** | Grade, learning environment, subject focus, learning goal | Setup wizard, profile migration |
+
+The profile is automatically updated after each interaction via `update_profile_from_interaction()`, and injected into the system prompt to drive adaptive teaching strategies.
+
+---
+
+## Adaptive Teaching Strategies
+
+ECNUClaw generates **profile-aware adaptive strategies** in real-time:
+
+| Profile Signal | Adaptive Response |
+|---------------|-------------------|
+| Low self-efficacy / high frustration | Increase encouragement, reduce difficulty, validate effort |
+| High motivation | Raise challenge level, encourage independent exploration |
+| Multiple weak knowledge points | Prioritize foundation building, use analogies and examples |
+| Bloom's "remember" level | Help build connections, scaffold toward "understand" |
+| Bloom's "apply" level | Provide varied exercises, scaffold toward "analyze" |
+| Prefers guided learning | More Socratic questioning, structured step-by-step |
+| Prefers exploratory learning | Open-ended problems, less direct guidance |
+
+---
+
+## Project Structure
+
+```
+ECNUClaw/
+├── src/lebotclaw/
+│   ├── core/
+│   │   ├── agent.py          # Agent + profile injection + adaptive strategies
+│   │   ├── memory.py         # MemoryStore + LearnerProfile (5 dimensions)
+│   │   ├── router.py         # Intent classification + routing
+│   │   ├── planner.py        # 5 teaching plan templates + replan
+│   │   ├── skills.py         # Teaching skill library
+│   │   └── cli.py            # CLI entry point
+│   ├── tools/                # Tool calling framework
+│   │   └── builtin/          # calculator, dictionary, knowledge, timer
+│   ├── adapters/             # Multi-model adapters (DeepSeek/Qwen/GLM/Kimi/...)
+│   └── education/
+│       ├── heads.py          # HEADS templates (教育大脑 + 人机协同)
+│       ├── assessment.py     # Multi-dimension assessment + profile evaluation
+│       └── subjects/         # Math/Chinese/Science agents
+├── tests/                    # 67 tests
+└── pyproject.toml
+```
+
+---
+
+## Quick Start
 
 ```bash
 pip install lebotclaw
 ```
 
-### 5 Lines to Run
-
 ```python
 from lebotclaw.core.agent import Agent, AgentRegistry
-from lebotclaw.core.router import IntentRouter
-
-router = IntentRouter()
-registry = AgentRegistry()
-
-# Register default agents (math, chinese, science, general)
-from lebotclaw.education.subjects import MathAgent, ChineseAgent, ScienceAgent
-registry.register(MathAgent.create())
-registry.register(ChineseAgent.create())
-registry.register(ScienceAgent.create())
-
-# Start the CLI
-from lebotclaw.core.cli import main
-main()
-```
-
-### Use as a Library
-
-```python
 from lebotclaw.core.memory import MemoryStore
-from lebotclaw.core.planner import Planner
 
-# Plan a learning session
-planner = Planner()
-plan = planner.decompose("帮我复习分数", subject="math")
-for step in plan.steps:
-    print(f"  {step.id}. {step.title}")
-
-# Save student memory
+# Create an agent with learner profiling
 memory = MemoryStore()
-memory.save_memory("student_profile", "math", "年级", "五年级")
-memory.save_memory("learning_progress", "math", "错题", "分数加减法容易忘记通分")
-
-# Recall relevant memory
-results = memory.search_memory(query="分数", subject="math")
-```
-
-### Custom Agent
-
-```python
-from lebotclaw.core.agent import Agent
-from lebotclaw.tools.builtin.calculator import CalculatorTool
-from lebotclaw.tools.registry import ToolRegistry
-
-tools = ToolRegistry()
-tools.register(CalculatorTool())
-
 agent = Agent(
-    name="my_math_agent",
-    system_prompt="你是一个友善的数学老师，善于引导学生思考。",
-    tools=tools,
+    name="math_companion",
+    system_prompt="...",  # or use HEADSTemplate.math_prompt()
+    memory=memory,
 )
 
-# When model_adapter is configured, agent.chat() runs the full pipeline
-response = agent.chat("3 * 7 + 2 等于多少？")
+response = agent.chat("我不会做这道分数题")
+
+# The learner profile is automatically updated
+profile = memory.get_learner_profile()
+print(memory.get_learner_summary())
 ```
 
-## Project Structure
+---
 
-```
-LebotClaw/
-├── src/lebotclaw/
-│   ├── core/                    # Core Engine
-│   │   ├── agent.py             # Agent base class + AgentRegistry
-│   │   ├── router.py            # Intent classification + routing
-│   │   ├── memory.py            # SQLite-backed persistent memory
-│   │   ├── planner.py           # Task decomposition + replan
-│   │   ├── skills.py            # Teaching skill library
-│   │   └── cli.py               # CLI entry point
-│   ├── tools/                   # Tool Calling Framework
-│   │   ├── base.py              # Tool/ToolCall/ToolResult
-│   │   ├── registry.py          # ToolRegistry
-│   │   └── builtin/             # Built-in tools
-│   │       ├── calculator.py    # Math expression calculator
-│   │       ├── dictionary.py    # Chinese-English dictionary
-│   │       ├── knowledge.py     # K-12 knowledge retrieval
-│   │       └── timer.py         # Study timer / Pomodoro
-│   ├── adapters/                # Model Adapters (OpenAI-compatible)
-│   │   ├── base.py              # ModelAdapter base
-│   │   ├── deepseek.py          # DeepSeek
-│   │   ├── qwen.py              # Qwen (Alibaba)
-│   │   ├── glm.py               # GLM (Zhipu AI)
-│   │   ├── kimi.py              # Kimi (Moonshot)
-│   │   ├── doubao.py            # Doubao (ByteDance)
-│   │   └── innoSpark.py         # InnoSpark education model
-│   └── education/               # Education Modules
-│       ├── heads.py             # HEADS prompt templates
-│       ├── assessment.py        # Growth assessment
-│       └── subjects/            # Subject agents
-│           ├── math.py
-│           ├── chinese.py
-│           └── science.py
-├── tests/                       # 67 tests
-├── docs/
-│   └── architecture.md
-└── pyproject.toml
-```
+## Key References
 
-## Memory Architecture
+- 张治 等. 基于数字画像的综合素质评价：框架、指标、模型与应用. 中国电化教育, 2021(8): 25-33.
+- 张治, 戚业国. 基于大数据的多源多维综合素质评价模型的构建. 中国电化教育, 2017(09): 69-77.
+- 余明华, 张治, 祝智庭. 基于可视化学习分析的研究性学习学生画像构建研究. 中国电化教育, 2020(12): 36-43.
+- 张治, 徐冰冰. 人工智能教育大脑的生态架构和应用场景. 开放教育研究, 2022(02): 64-72.
+- 张治. ChatGPT/生成式人工智能重塑教育的底层逻辑和可能路径. 华东师范大学学报(教育科学版), 2023, 41(7): 131-142.
+- 张治, 刘德建, 徐冰冰. 智能型数字教材系统的核心理念和技术实现. 开放教育研究, 2021(01): 44-54.
 
-LebotClaw implements a 4-category education memory system inspired by OpenClaw's persistent memory and Hermes's growing memory concepts:
+---
 
-| Category | What It Stores | Example |
-|----------|---------------|---------|
-| `student_profile` | Student attributes and preferences | 年级, 学习风格, 学科偏好 |
-| `learning_progress` | Learning trajectory and weak points | 错题记录, 当前章节, 知识盲点 |
-| `session_summary` | Session-level outcomes | 知识点讲解, 工具结果摘要, 待跟进事项 |
-| `skill_memory` | Successful teaching patterns | 高质量讲解套路, 可复用教学模板 |
+## Authors
 
-Memory lifecycle: **对话/工具执行 → 抽取关键记忆 → 持久化保存 → 按意图/学科召回 → 注入 prompt → 执行后更新**
+- **Yizhou Zhou** (周艺舟) — East China Normal University
+- **Jiayin Li** (李佳音) — East China Normal University
+- **Zhi Zhang** (张治) — East China Normal University (Corresponding Author)
 
-## Planning Templates
+## Acknowledgments
 
-The Planner includes 5 built-in education templates:
-
-| Trigger | Template | Steps |
-|---------|----------|-------|
-| "复习/回顾" | Review | 知识点回顾 → 例题练习 → 错题巩固 → 总结 |
-| "学/了解/新概念" | Learn | 概念引入 → 举例说明 → 练习闯关 → 检查理解 → 拓展应用 |
-| "做题/练习" | Practice | 题目分析 → 分步解答 → 方法总结 → 变式训练 |
-| "作文/写作" | Writing | 审题 → 素材收集 → 列提纲 → 写作 → 修改润色 |
-| Other | General | 目标确认 → 知识准备 → 实践练习 → 检查反馈 → 总结 |
-
-## Configuration
-
-Model adapters read API keys from environment variables:
-
-```bash
-export DEEPSEEK_API_KEY="your-key"
-export QWEN_API_KEY="your-key"
-export GLM_API_KEY="your-key"
-export MOONSHOT_API_KEY="your-key"       # Kimi
-export DOUBAO_API_KEY="your-key"
-export INNOSPARK_API_KEY="your-key"
-```
-
-Or use the built-in setup wizard (`lebotclaw setup`) to configure interactively.
-
-Memory and skills are stored in `~/.lebotclaw/` by default.
-
-## Inspiration & References
-
-LebotClaw draws engineering and pedagogical ideas from:
-
-- **OpenClaw** — Tool calling protocol, agent registration, persistent memory
-- **Hermes Agent** — Long-horizon planning, skill formation, cross-session memory growth
-- **Intelligent Tutoring Systems (ITS)** — Socratic questioning, adaptive scaffolding, formative assessment
-- **HEADS Framework** — Human-centered education agent design principles
-- **OpenHands** — Agent SDK modularity, multi-entry deployment
+Research conducted at the **Intelligent Education Laboratory** (智能教育实验室), Faculty of Education, East China Normal University (华东师范大学教育学部).
 
 ## License
 
@@ -237,4 +204,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built by [Lanboat Intelligence](https://lanboat.com) · 苏州斓舟智能科技有限公司 · 2026*
+*East China Normal University · Intelligent Education Laboratory · 2026*
