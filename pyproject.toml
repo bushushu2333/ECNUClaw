@@ -3,14 +3,14 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ecnucleaw"
+name = "lebotclaw"
 version = "0.1.0"
-description = "ECNUClaw — An Intelligent Study Companion Framework for K-12 Education (ECNU AI Education Lab)"
+description = "A CLI Agent Framework for K-12 Education —面向K-12教育的CLI智能体框架"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 authors = [
-    {name = "ECNU AI Education Lab", email = "aiedlab@ai.ecnu.edu.cn"},
+    {name = "Lanboat Intelligence", email = "dev@lanboat.com"},
 ]
 keywords = ["education", "agent", "cli", "k-12", "ai", "llm"]
 classifiers = [

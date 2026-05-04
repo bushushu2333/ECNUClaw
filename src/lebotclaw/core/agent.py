@@ -2,7 +2,7 @@ import json
 import time
 from typing import Optional
 
-from lebotclaw.core.memory import MemoryStore
+from lebotclaw.core.memory import MemoryStore, LearnerProfile
 from lebotclaw.tools.registry import ToolRegistry
 from lebotclaw.adapters.base import ModelAdapter, ModelResponse
 from lebotclaw.core.planner import Planner
@@ -46,6 +46,7 @@ class Agent:
             self._history.append({"role": "user", "content": user_input})
             self._history.append({"role": "assistant", "content": response_text})
             self.memory.summarize_session(self._history)
+            self.memory.update_profile_from_interaction(self._history)
             return response_text
 
         response = self.model_adapter.generate(
@@ -88,6 +89,7 @@ class Agent:
             self._history.append({"role": "assistant", "content": final_text})
 
         self.memory.summarize_session(self._history)
+        self.memory.update_profile_from_interaction(self._history)
         return final_text
 
     def chat_stream(self, user_input: str):
@@ -108,6 +110,7 @@ class Agent:
             self._history.append({"role": "user", "content": user_input})
             self._history.append({"role": "assistant", "content": response_text})
             self.memory.summarize_session(self._history)
+            self.memory.update_profile_from_interaction(self._history)
             yield response_text
             return
 
@@ -125,6 +128,7 @@ class Agent:
         self._history.append({"role": "user", "content": user_input})
         self._history.append({"role": "assistant", "content": full_response})
         self.memory.summarize_session(self._history)
+        self.memory.update_profile_from_interaction(self._history)
 
     def freeze(self) -> str:
         context_data = {
@@ -159,12 +163,95 @@ class Agent:
                 memory_lines.append(f"- [{entry.category}] {content}")
             prompt_parts.append("\n\n相关学习记忆：\n" + "\n".join(memory_lines))
 
-        profile = self.memory.get_student_profile()
-        if profile:
-            profile_summary = json.dumps(profile, ensure_ascii=False, indent=None)
-            prompt_parts.append(f"\n\n学生画像：{profile_summary}")
+        # 注入 5 维学习者画像（张治「数字画像三层框架」）
+        profile = self.memory.get_learner_profile()
+        prompt_parts.append("\n\n" + self._build_profile_injection(profile))
+
+        # 注入画像驱动的自适应策略
+        adaptive = self._build_adaptive_strategy(profile)
+        if adaptive:
+            prompt_parts.append("\n\n" + adaptive)
 
         return "\n".join(prompt_parts)
+
+    def _build_profile_injection(self, profile: LearnerProfile) -> str:
+        c = profile.cognitive
+        b = profile.behavioral
+        e = profile.emotional
+        m = profile.metacognitive
+        ctx = profile.contextual
+
+        bloom_names = {
+            "remember": "记忆", "understand": "理解", "apply": "应用",
+            "analyze": "分析", "evaluate": "评价", "create": "创造",
+        }
+
+        weak_topics = [k for k, v in c.knowledge_state.items() if v == "weak"]
+        mastered = [k for k, v in c.knowledge_state.items() if v == "mastered"]
+
+        lines = [
+            "【学习者画像】（基于张治「数字画像三层框架」）",
+            f"情境维度：年级「{ctx.grade or '未知'}」| 专注「{ctx.subject_focus or '未设定'}」| 目标「{ctx.learning_goal or '未设定'}」",
+            f"认知维度：布鲁姆「{bloom_names.get(c.bloom_level, c.bloom_level)}」水平 | 先验知识 {len(c.prior_knowledge)} 项",
+        ]
+        if weak_topics:
+            lines.append(f"  ⚠ 薄弱知识点：{', '.join(weak_topics[:5])}")
+        if mastered:
+            lines.append(f"  ✓ 已掌握：{', '.join(mastered[:5])}")
+
+        lines.append(f"行为维度：累计 {b.total_sessions} 次会话 | 提问 {b.total_questions} 次")
+        lines.append(f"情感维度：动机 {e.motivation_level:.0%} | 自我效能 {e.self_efficacy:.0%} | 累计受挫 {e.frustration_count} 次")
+        lines.append(f"元认知维度：策略偏好「{m.preferred_strategy}」| 反思能力 {m.reflection_ability:.0%}")
+
+        return "\n".join(lines)
+
+    def _build_adaptive_strategy(self, profile: LearnerProfile) -> str:
+        strategies = []
+        e = profile.emotional
+        c = profile.cognitive
+        m = profile.metacognitive
+
+        # 情感自适应
+        if e.self_efficacy < 0.3 or e.frustration_count > 5:
+            strategies.append(
+                "- 该同学自我效能感较低/受挫较多，请增加鼓励频率，降低任务难度，"
+                "每次只给一小步，多肯定进步，避免直接指出错误。"
+            )
+        elif e.motivation_level > 0.8:
+            strategies.append(
+                "- 该同学动机水平很高，可以适当提高挑战难度，鼓励独立探索和创造性思考。"
+            )
+
+        # 认知自适应
+        weak_count = sum(1 for v in c.knowledge_state.values() if v == "weak")
+        if weak_count > 3:
+            strategies.append(
+                "- 该同学有多个薄弱知识点，优先巩固基础，"
+                "讲解时多用类比和生活例子，确保每步都理解再继续。"
+            )
+
+        bloom_detail = {
+            "remember": "- 该同学目前处于记忆/识记水平，帮助建立知识点之间的联系，向理解层次提升。",
+            "understand": "- 该同学处于理解水平，多引导用自己的话解释概念，向应用层次提升。",
+            "apply": "- 该同学处于应用水平，多给变式练习和实际问题，向分析层次提升。",
+            "analyze": "- 该同学处于分析水平，引导比较异同、归纳规律，向评价层次提升。",
+            "evaluate": "- 该同学处于评价水平，引导批判性思考和论证，向创造层次提升。",
+            "create": "- 该同学已达到创造水平，鼓励独立设计和创新性解决问题。",
+        }
+        if c.bloom_level in bloom_detail:
+            strategies.append(bloom_detail[c.bloom_level])
+
+        # 元认知自适应
+        if m.preferred_strategy == "guided":
+            strategies.append("- 该同学偏好引导式学习，多用提问引导思考，不直接给答案。")
+        elif m.preferred_strategy == "exploratory":
+            strategies.append("- 该同学偏好探索式学习，给开放性问题和探索空间，少给提示。")
+        elif m.preferred_strategy == "collaborative":
+            strategies.append("- 该同学偏好协作式学习，多使用「我们一起」的语气，模拟对话式探究。")
+
+        if strategies:
+            return "【自适应教学策略】\n" + "\n".join(strategies)
+        return ""
 
     def _handle_tool_calls(self, tool_calls: list[dict]) -> list[dict]:
         results = []
