@@ -1,8 +1,10 @@
 # ECNUClaw
 
-**A Learner-Profiled Intelligent Study Companion Framework for K-12 Personalized Education**
+**让每个 K-12 学习者拥有一个懂自己的 AI 学伴**
 
-基于张治教授「数字画像 + 教育大脑 + 人机协同智商」理论的 K-12 智能学伴框架，由华东师范大学智能教育实验室研发。
+ECNUClaw 是华东师范大学智能教育实验室研发的 K-12 智能学伴框架。它会记住每个学生的认知水平、学习习惯、情绪状态，并据此调整教学策略——就像一位真正了解你的老师。
+
+基于张治教授的「数字画像」和「教育大脑」理论，ECNUClaw 不直接给答案，而是通过引导式对话帮助学生自己思考、自己学会。
 
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -10,198 +12,179 @@
 
 ---
 
-## Theoretical Foundations
+## ECNUClaw 能做什么？
 
-ECNUClaw is grounded in three core theories developed by Prof. Zhi Zhang (张治) and colleagues at ECNU's Intelligent Education Laboratory:
-
-### 1. Digital Portrait Three-Layer Framework (数字画像三层框架, 2021)
-
-> 张治 等. 基于数字画像的综合素质评价：框架、指标、模型与应用. 中国电化教育, 2021(8): 25-33.
-
-ECNUClaw implements this framework through a **5-dimension learner profile** that replaces static test-score-driven assessment with dynamic, data-driven, multi-dimensional profiling:
-
-| Layer | ECNUClaw Implementation |
-|-------|------------------------|
-| **Indicator System Layer** | 5 profile dimensions with structured indicators (cognitive, behavioral, emotional, metacognitive, contextual) |
-| **Data Practice Layer** | Multi-source data extraction from conversations — dialogue behavior, tool usage, error patterns, emotional signals, metacognitive markers |
-| **Digital Portrait Layer** | SQLite-persisted `LearnerProfile` with dynamic updates across sessions, plus structured summary output |
-
-### 2. Education Brain Model (教育大脑模型, 2022)
-
-> 张治, 徐冰冰. 人工智能教育大脑的生态架构和应用场景. 开放教育研究, 2022(02): 64-72.
-
-ECNUClaw's architecture mirrors the three-layer brain-inspired computing model:
-
-| Brain Layer | Function | ECNUClaw Module |
-|------------|----------|-----------------|
-| **Sensory Nervous System** | Multi-source data perception | CLI interaction + Intent Router + conversation signal extraction |
-| **Central Nervous System** | AI analysis + profile construction + pedagogical decision | Agent + LearnerProfile + Planner + adaptive strategy generation |
-| **Motor Nervous System** | Personalized output + adaptive intervention | HEADS Prompt Templates + profile-driven adaptive strategies + tool calling |
-
-### 3. Human-AI Collaborative IQ (人机协同智商, 2023)
-
-> 张治. ChatGPT/生成式人工智能重塑教育的底层逻辑和可能路径. 华东师范大学学报(教育科学版), 2023, 41(7): 131-142.
-
-ECNUClaw is designed not to replace learning, but to enhance learners' thinking and metacognitive abilities through:
-- Socratic questioning rather than direct answer-giving
-- Profile-aware scaffolding that adapts to cognitive level (Bloom's taxonomy)
-- Metacognitive reflection prompts embedded in teaching strategies
-- Goal: cultivating the learner's ability to **collaborate with AI to solve problems**
+- **认识你的学生** — 自动构建 5 维学习者画像（认知、行为、情感、元认知、情境），越用越了解
+- **因材施教** — 根据画像自动调整：讲解深度、引导强度、鼓励频率、题目难度
+- **陪伴式学习** — 不直接给答案，用苏格拉底式提问引导学生自己想出来
+- **多学科覆盖** — 数学、语文、科学、通用，自动识别学科并切换对应学伴
+- **多模型支持** — DeepSeek、通义千问、智谱GLM、Kimi、豆包等国内主流模型均可接入
+- **数据本地存储** — 所有学生数据存在本地 SQLite，安全可控
 
 ---
 
-## Architecture
+## 为什么选择 ECNUClaw？
+
+| 特性 | 说明 |
+|------|------|
+| **不是聊天机器人，是学伴** | 不会直接告诉学生答案，而是引导思考，培养「与 AI 协作解决问题」的能力 |
+| **越用越懂学生** | 每次对话都自动更新学习者画像，积累学习数据，动态调整教学策略 |
+| **安全的教育环境** | 只讨论学习相关内容，内置内容过滤和话题边界管控 |
+| **零门槛部署** | 命令行 4 步配置向导，选模型、选风格、填学生信息，开箱即用 |
+| **学术理论支撑** | 基于张治教授（华东师范大学）的数字画像、教育大脑、人机协同智商理论 |
+
+---
+
+## 学习者画像：5 个维度，全面了解学生
+
+ECNUClaw 为每位学生维护一个动态的 5 维画像，自动从对话中提取信号：
+
+| 维度 | 关注什么 | 怎么用 |
+|------|---------|--------|
+| **认知** | 知识掌握情况、布鲁姆认知水平 | 薄弱点多巩固，高水平给挑战 |
+| **行为** | 提问频率、会话时长、工具使用 | 判断参与度，调整互动节奏 |
+| **情感** | 学习情绪（困惑/挫折/兴奋）、动机 | 受挫时多鼓励，兴奋时加难度 |
+| **元认知** | 学习策略偏好、反思能力 | 偏引导式就多提问，偏探索式就少提示 |
+| **情境** | 年级、科目、学习目标 | 提供年级匹配的内容和难度 |
+
+---
+
+## 自适应教学：对学生了如指掌后，策略自动调整
+
+| 学生画像信号 | ECNUClaw 的应对 |
+|-------------|----------------|
+| 自我效能感低 / 频繁受挫 | 增加鼓励，降低难度，每次只走一小步 |
+| 学习动机很高 | 适当提高挑战，鼓励独立探索 |
+| 多个薄弱知识点 | 优先巩固基础，多用类比和生活例子 |
+| 布鲁姆「记忆」水平 | 帮助建立知识联系，向「理解」层次提升 |
+| 布鲁姆「应用」水平 | 多给变式练习，向「分析」层次提升 |
+| 偏好引导式学习 | 多用提问引导，不直接给答案 |
+| 偏好探索式学习 | 给开放性问题，提供探索空间 |
+
+---
+
+## 教育大脑三层架构
+
+ECNUClaw 的技术架构对应张治教授的「教育大脑」模型：
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    Education Brain Architecture               │
-│                 (张治「教育大脑」三层架构)                       │
-├──────────────────────────────────────────────────────────────┤
-│  Motor Layer (类脑运动神经系统)                                │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  HEADS Templates + Adaptive Strategies                  │ │
-│  │  Profile-driven: detail level / guidance strength /     │ │
-│  │  encouragement frequency / Bloom scaffolding             │ │
-│  └─────────────────────────────────────────────────────────┘ │
-├──────────────────────────────────────────────────────────────┤
-│  Central Layer (类脑中枢神经系统)                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │   Agent      │  │   Learner    │  │     Planner       │  │
-│  │  Registry    │  │   Profile    │  │  5 Teaching Plans │  │
-│  │ Math/Chinese │  │  5 Dimensions│  │  + Replan         │  │
-│  │ Science/Gen  │  │  + Auto-     │  │                   │  │
-│  │              │  │    Update    │  │                   │  │
-│  └──────┬───────┘  └──────┬───────┘  └───────────────────┘  │
-│         │                 │                                   │
-│  ┌──────┴─────────────────┴──────────────────────────────┐   │
-│  │              Tool Calling Framework                     │   │
-│  │   calculator │ dictionary │ knowledge │ timer           │   │
-│  └────────────────────────────────────────────────────────┘   │
-├──────────────────────────────────────────────────────────────┤
-│  Sensory Layer (类脑感知神经系统)                              │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │  CLI + Intent Router + Signal Extraction                │ │
-│  │  Cognitive signals │ Emotional markers │ Behavioral data│ │
-│  │  Metacognitive cues │ Contextual info                    │ │
-│  └─────────────────────────────────────────────────────────┘ │
-├──────────────────────────────────────────────────────────────┤
-│              Assessment Module                                │
-│  Cognitive │ Behavioral │ Emotional │ Metacognitive           │
-│  + Teaching Quality: Accuracy │ Naturalness │ Personalization│
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│         行动层（类脑运动神经系统）           │
+│    HEADS 模板 + 自适应教学策略输出          │
+├──────────────────────────────────────────┤
+│         中枢层（类脑中枢神经系统）           │
+│    Agent + 5维画像 + Planner + 工具调用    │
+├──────────────────────────────────────────┤
+│         感知层（类脑感知神经系统）           │
+│    对话交互 + 意图识别 + 信号提取           │
+└──────────────────────────────────────────┘
 ```
 
----
-
-## 5-Dimension Learner Profile
-
-ECNUClaw maintains a dynamic learner profile across 5 dimensions, automatically extracted from conversations:
-
-| Dimension | Indicators | Data Sources |
-|-----------|-----------|--------------|
-| **Cognitive** | Knowledge state, Bloom's taxonomy level, prior knowledge, knowledge tracing | Question patterns, error analysis, topic coverage |
-| **Behavioral** | Question frequency, session duration, tool usage, interaction patterns | Conversation logs, tool call records |
-| **Emotional** | Current mood, motivation level, self-efficacy, frustration count | Sentiment markers (困惑/挫折/兴奋), engagement signals |
-| **Metacognitive** | Self-regulation, preferred learning strategy, reflection ability | Strategy choice keywords, reflection markers |
-| **Contextual** | Grade, learning environment, subject focus, learning goal | Setup wizard, profile migration |
-
-The profile is automatically updated after each interaction via `update_profile_from_interaction()`, and injected into the system prompt to drive adaptive teaching strategies.
+- **感知层**：从对话中捕捉学生的认知状态、情感信号、行为模式
+- **中枢层**：基于画像做教学决策，选择合适的引导策略
+- **行动层**：输出个性化的教学引导，自动调整语气和节奏
 
 ---
 
-## Adaptive Teaching Strategies
+## 快速开始
 
-ECNUClaw generates **profile-aware adaptive strategies** in real-time:
-
-| Profile Signal | Adaptive Response |
-|---------------|-------------------|
-| Low self-efficacy / high frustration | Increase encouragement, reduce difficulty, validate effort |
-| High motivation | Raise challenge level, encourage independent exploration |
-| Multiple weak knowledge points | Prioritize foundation building, use analogies and examples |
-| Bloom's "remember" level | Help build connections, scaffold toward "understand" |
-| Bloom's "apply" level | Provide varied exercises, scaffold toward "analyze" |
-| Prefers guided learning | More Socratic questioning, structured step-by-step |
-| Prefers exploratory learning | Open-ended problems, less direct guidance |
-
----
-
-## Project Structure
-
-```
-ECNUClaw/
-├── src/lebotclaw/
-│   ├── core/
-│   │   ├── agent.py          # Agent + profile injection + adaptive strategies
-│   │   ├── memory.py         # MemoryStore + LearnerProfile (5 dimensions)
-│   │   ├── router.py         # Intent classification + routing
-│   │   ├── planner.py        # 5 teaching plan templates + replan
-│   │   ├── skills.py         # Teaching skill library
-│   │   └── cli.py            # CLI entry point
-│   ├── tools/                # Tool calling framework
-│   │   └── builtin/          # calculator, dictionary, knowledge, timer
-│   ├── adapters/             # Multi-model adapters (DeepSeek/Qwen/GLM/Kimi/...)
-│   └── education/
-│       ├── heads.py          # HEADS templates (教育大脑 + 人机协同)
-│       ├── assessment.py     # Multi-dimension assessment + profile evaluation
-│       └── subjects/         # Math/Chinese/Science agents
-├── tests/                    # 67 tests
-└── pyproject.toml
-```
-
----
-
-## Quick Start
+### 安装
 
 ```bash
-pip install lebotclaw
+pip install ecnuclaw
 ```
 
-```python
-from lebotclaw.core.agent import Agent, AgentRegistry
-from lebotclaw.core.memory import MemoryStore
+### 配置模型
 
-# Create an agent with learner profiling
+ECNUClaw 需要连接一个 AI 模型。推荐使用 DeepSeek 或通义千问：
+
+```bash
+export DEEPSEEK_API_KEY="your-key"
+# 或
+export QWEN_API_KEY="your-key"
+```
+
+### 启动
+
+```bash
+ecnuclaw
+```
+
+首次运行会进入 4 步配置向导：选模型 → 选风格 → 选详细程度 → 填写学生信息。
+
+### 作为库使用
+
+```python
+from ecnuclaw.core.agent import Agent, AgentRegistry
+from ecnuclaw.core.memory import MemoryStore
+from ecnuclaw.education.heads import HEADSTemplate
+
 memory = MemoryStore()
 agent = Agent(
     name="math_companion",
-    system_prompt="...",  # or use HEADSTemplate.math_prompt()
+    system_prompt=HEADSTemplate.math_prompt(),
     memory=memory,
 )
 
 response = agent.chat("我不会做这道分数题")
 
-# The learner profile is automatically updated
-profile = memory.get_learner_profile()
+# 查看学习者画像
 print(memory.get_learner_summary())
 ```
 
 ---
 
-## Key References
+## 项目结构
+
+```
+ECNUClaw/
+├── src/ecnuclaw/
+│   ├── core/
+│   │   ├── agent.py          # 智能学伴 + 画像注入 + 自适应策略
+│   │   ├── memory.py         # 记忆存储 + 5维学习者画像
+│   │   ├── router.py         # 意图识别 + 学科路由
+│   │   ├── planner.py        # 5 套教学规划模板
+│   │   ├── skills.py         # 教学技能库
+│   │   └── cli.py            # 命令行入口
+│   ├── tools/                # 工具调用框架
+│   │   └── builtin/          # 计算器、字典、知识库、计时器
+│   ├── adapters/             # 多模型适配器
+│   └── education/
+│       ├── heads.py          # HEADS 教学提示词模板
+│       ├── assessment.py     # 多维度评估 + 画像报告
+│       └── subjects/         # 数学/语文/科学学伴
+├── tests/                    # 67 个测试
+└── pyproject.toml
+```
+
+---
+
+## 理论基础
+
+ECNUClaw 基于华东师范大学张治教授团队的三项核心理论：
+
+1. **数字画像三层框架** — 从静态考试分数驱动 → 动态、多源数据驱动的多维度学习者画像
+2. **教育大脑模型** — 仿生三层架构（感知→中枢→行动），实现数据采集、智能分析、个性化输出的闭环
+3. **人机协同智商** — AI 不替代学习，而是增强学习者的思维能力和元认知水平
+
+关键文献：
 
 - 张治 等. 基于数字画像的综合素质评价：框架、指标、模型与应用. 中国电化教育, 2021(8): 25-33.
-- 张治, 戚业国. 基于大数据的多源多维综合素质评价模型的构建. 中国电化教育, 2017(09): 69-77.
-- 余明华, 张治, 祝智庭. 基于可视化学习分析的研究性学习学生画像构建研究. 中国电化教育, 2020(12): 36-43.
 - 张治, 徐冰冰. 人工智能教育大脑的生态架构和应用场景. 开放教育研究, 2022(02): 64-72.
 - 张治. ChatGPT/生成式人工智能重塑教育的底层逻辑和可能路径. 华东师范大学学报(教育科学版), 2023, 41(7): 131-142.
-- 张治, 刘德建, 徐冰冰. 智能型数字教材系统的核心理念和技术实现. 开放教育研究, 2021(01): 44-54.
 
 ---
 
-## Authors
+## 关于我们
 
-- **Yizhou Zhou** (周艺舟) — East China Normal University
-- **Jiayin Li** (李佳音) — East China Normal University
-- **Zhi Zhang** (张治) — East China Normal University (Corresponding Author)
+**创作者**：周艺舟 — 华东师范大学教育学部，智能教育方向博士研究生
 
-## Acknowledgments
+**指导老师**：张治 教授 — 华东师范大学教育学部，智能教育实验室主任
 
-Research conducted at the **Intelligent Education Laboratory** (智能教育实验室), Faculty of Education, East China Normal University (华东师范大学教育学部).
+**实验室**：华东师范大学智能教育实验室
 
-## License
+---
+
+## 许可证
 
 MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-*East China Normal University · Intelligent Education Laboratory · 2026*

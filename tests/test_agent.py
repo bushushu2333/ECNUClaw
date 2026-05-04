@@ -1,14 +1,14 @@
-"""Tests for LebotClaw agent and registry."""
+"""Tests for ECNUClaw agent and registry."""
 import pytest
 import tempfile
 import os
 
-from lebotclaw.core.agent import Agent, AgentRegistry
-from lebotclaw.core.memory import MemoryStore
-from lebotclaw.tools.registry import ToolRegistry
-from lebotclaw.tools.builtin.calculator import CalculatorTool
-from lebotclaw.education.heads import HEADSTemplate
-from lebotclaw.education.assessment import AssessmentModule
+from ecnuclaw.core.agent import Agent, AgentRegistry
+from ecnuclaw.core.memory import MemoryStore
+from ecnuclaw.tools.registry import ToolRegistry
+from ecnuclaw.tools.builtin.calculator import CalculatorTool
+from ecnuclaw.education.heads import HEADSTemplate
+from ecnuclaw.education.assessment import AssessmentModule
 
 
 class TestAgent:
@@ -119,7 +119,7 @@ class TestHEADSTemplate:
 
     def test_general_prompt(self):
         prompt = HEADSTemplate.general_prompt()
-        assert "LebotClaw" in prompt
+        assert "ECNUClaw" in prompt
 
 
 class TestAssessmentModule:

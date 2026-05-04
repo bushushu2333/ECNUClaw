@@ -1,12 +1,12 @@
-"""Tests for LebotClaw router and planner."""
+"""Tests for ECNUClaw router and planner."""
 import pytest
 import tempfile
 import os
 
-from lebotclaw.core.router import IntentRouter, IntentCategory
-from lebotclaw.core.planner import Planner, Plan, Step, StepStatus
-from lebotclaw.core.memory import MemoryStore
-from lebotclaw.core.skills import SkillLibrary, TeachingSkill
+from ecnuclaw.core.router import IntentRouter, IntentCategory
+from ecnuclaw.core.planner import Planner, Plan, Step, StepStatus
+from ecnuclaw.core.memory import MemoryStore
+from ecnuclaw.core.skills import SkillLibrary, TeachingSkill
 
 
 class TestIntentRouter:

@@ -1,10 +1,10 @@
-"""LebotClaw Quick Start — 5 lines to run an education agent."""
-from lebotclaw.core.agent import Agent
-from lebotclaw.core.memory import MemoryStore
-from lebotclaw.core.planner import Planner
-from lebotclaw.core.router import IntentRouter
-from lebotclaw.tools.builtin import CalculatorTool, DictionaryTool, KnowledgeTool, TimerTool
-from lebotclaw.tools.registry import ToolRegistry
+"""ECNUClaw Quick Start — 5 lines to run an education agent."""
+from ecnuclaw.core.agent import Agent
+from ecnuclaw.core.memory import MemoryStore
+from ecnuclaw.core.planner import Planner
+from ecnuclaw.core.router import IntentRouter
+from ecnuclaw.tools.builtin import CalculatorTool, DictionaryTool, KnowledgeTool, TimerTool
+from ecnuclaw.tools.registry import ToolRegistry
 
 
 def main():

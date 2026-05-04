@@ -1,11 +1,11 @@
-"""Tests for LebotClaw tools framework."""
+"""Tests for ECNUClaw tools framework."""
 import pytest
-from lebotclaw.tools.base import Tool, ToolResult, ToolCall
-from lebotclaw.tools.registry import ToolRegistry
-from lebotclaw.tools.builtin.calculator import CalculatorTool
-from lebotclaw.tools.builtin.dictionary import DictionaryTool
-from lebotclaw.tools.builtin.knowledge import KnowledgeTool
-from lebotclaw.tools.builtin.timer import TimerTool
+from ecnuclaw.tools.base import Tool, ToolResult, ToolCall
+from ecnuclaw.tools.registry import ToolRegistry
+from ecnuclaw.tools.builtin.calculator import CalculatorTool
+from ecnuclaw.tools.builtin.dictionary import DictionaryTool
+from ecnuclaw.tools.builtin.knowledge import KnowledgeTool
+from ecnuclaw.tools.builtin.timer import TimerTool
 
 
 class TestCalculatorTool:

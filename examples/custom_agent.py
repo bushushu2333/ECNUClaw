@@ -1,13 +1,13 @@
 """Custom Agent Example — Build your own education agent."""
 
-from lebotclaw.core.agent import Agent, AgentRegistry
-from lebotclaw.core.memory import MemoryStore
-from lebotclaw.core.planner import Planner
-from lebotclaw.core.router import IntentRouter
-from lebotclaw.tools.base import Tool, ToolResult
-from lebotclaw.tools.registry import ToolRegistry
-from lebotclaw.tools.builtin.calculator import CalculatorTool
-from lebotclaw.tools.builtin.knowledge import KnowledgeTool
+from ecnuclaw.core.agent import Agent, AgentRegistry
+from ecnuclaw.core.memory import MemoryStore
+from ecnuclaw.core.planner import Planner
+from ecnuclaw.core.router import IntentRouter
+from ecnuclaw.tools.base import Tool, ToolResult
+from ecnuclaw.tools.registry import ToolRegistry
+from ecnuclaw.tools.builtin.calculator import CalculatorTool
+from ecnuclaw.tools.builtin.knowledge import KnowledgeTool
 
 
 class GeometryTool(Tool):
@@ -81,7 +81,7 @@ def main():
     print(f"  {result.output}")
 
     # Register in multi-agent system
-    from lebotclaw.education.subjects import MathAgent, ChineseAgent
+    from ecnuclaw.education.subjects import MathAgent, ChineseAgent
 
     registry = AgentRegistry()
     registry.register(agent)

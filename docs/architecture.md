@@ -1,8 +1,8 @@
-# LebotClaw Architecture
+# ECNUClaw Architecture
 
 ## Overview
 
-LebotClaw is a CLI agent runtime designed for K-12 education. It combines OpenClaw-style tool calling and persistent memory with Hermes-style long-horizon planning and skill formation.
+ECNUClaw 是华东师范大学智能教育实验室研发的 K-12 智能学伴框架，基于张治教授的「教育大脑」三层架构设计。
 
 ## Core Data Flow
 
@@ -16,39 +16,44 @@ Intent Router ─── classify intent → route to agent + model
 Agent.chat()
     │
     ├── 1. Memory recall (search_memory by intent + subject)
-    ├── 2. Build messages (system prompt + memory + history + input)
-    ├── 3. Model call (generate via ModelAdapter)
-    ├── 4. Tool call loop (if tool_calls in response)
+    ├── 2. Load 5-dimension learner profile
+    ├── 3. Build messages (system prompt + profile + memory + adaptive strategy + input)
+    ├── 4. Model call (generate via ModelAdapter)
+    ├── 5. Tool call loop (if tool_calls in response)
     │       ├── parse tool calls
     │       ├── execute via ToolRegistry
     │       └── feed results back to model
-    ├── 5. Update history
-    ├── 6. Summarize session → write to MemoryStore
-    └── 7. Return response
+    ├── 6. Update history
+    ├── 7. Summarize session → write to MemoryStore
+    ├── 8. Update learner profile (5 dimensions from interaction signals)
+    └── 9. Return response
 ```
 
-## Module Details
+## Learner Profile System (5 Dimensions)
 
-### Tool Calling Protocol
+Based on Zhang Zhi's Digital Portrait Three-Layer Framework:
 
-```
-LLM Output
-    │
-    ├── ```tool_call {"tool_name": "calculator", "arguments": {"expression": "3*7"}} ```
-    │
-    ▼
-Tool.parse_tool_calls() → [ToolCall(tool_name="calculator", arguments={...})]
-    │
-    ▼
-ToolRegistry.execute("calculator", expression="3*7") → ToolResult(success=True, output="21")
-    │
-    ▼
-Result injected back into message context
-```
+| Dimension | Data Class | Key Fields |
+|-----------|-----------|------------|
+| **Cognitive** | `CognitiveDimension` | knowledge_state, bloom_level, prior_knowledge, knowledge_tracing |
+| **Behavioral** | `BehavioralDimension` | question_frequency, tool_usage, interaction_patterns, total_sessions |
+| **Emotional** | `EmotionalDimension` | current_mood, motivation_level, self_efficacy, frustration_count |
+| **Metacognitive** | `MetacognitiveDimension` | self_regulation, preferred_strategy, reflection_ability |
+| **Contextual** | `ContextualDimension` | grade, learning_environment, subject_focus, learning_goal |
 
-### Memory System
+Profile is stored in SQLite (`learner_profile` table) and automatically updated after each interaction via `update_profile_from_interaction()`.
 
-4 categories stored in SQLite (`~/.lebotclaw/memory.db`):
+## Adaptive Strategy Engine
+
+Profile signals drive real-time strategy injection into system prompts:
+
+- **Emotional adaptation**: low self-efficacy → more encouragement, high motivation → raise challenge
+- **Cognitive adaptation**: multiple weak topics → foundation building, Bloom's level → scaffold to next level
+- **Metacognitive adaptation**: strategy preference → adjust guidance style
+
+## Memory System
+
+4 categories stored in SQLite (`~/.ecnuclaw/memory.db`):
 
 - **student_profile**: Student attributes (grade, learning style, preferences)
 - **learning_progress**: Learning trajectory (current chapter, errors, mastery)
@@ -57,7 +62,7 @@ Result injected back into message context
 
 Recall strategy: query by `intent keywords + subject + tags`, rank by `relevance_score × access_count`.
 
-### Planner
+## Planner
 
 5 built-in templates matched by goal keywords:
 
@@ -74,7 +79,7 @@ Recall strategy: query by `intent keywords + subject + tags`, rank by `relevance
 - Negative → insert review steps
 - Frustration → insert encouragement
 
-### Intent Router
+## Intent Router
 
 Keyword-based classification into 7 intents:
 
@@ -86,11 +91,7 @@ Keyword-based classification into 7 intents:
 6. `tool_call` → routed by specific tool
 7. `multi_turn` / `general` → current agent, innoSpark model
 
-Fallback: if primary model times out, automatically switches to backup model.
-
-### Model Adapters
-
-All adapters follow the OpenAI-compatible API pattern:
+## Model Adapters
 
 | Adapter | Base URL | Default Model | Env Key |
 |---------|----------|---------------|---------|
@@ -99,20 +100,18 @@ All adapters follow the OpenAI-compatible API pattern:
 | Qwen | `dashscope.aliyuncs.com/compatible-mode/v1` | qwen-plus | `QWEN_API_KEY` |
 | DeepSeek | `api.deepseek.com/v1` | deepseek-chat | `DEEPSEEK_API_KEY` |
 
-### Skill Library
+## Assessment
 
-Stored in JSON (`~/.lebotclaw/skills.json`). Skills are auto-extracted when:
-- Plan completion rate > 80%
-- Teaching effectiveness score > 0.7
+Teaching quality evaluation (3 dimensions):
+- **Knowledge Accuracy** (0-1)
+- **Interaction Naturalness** (0-1)
+- **Personalization** (0-1)
 
-Each skill contains: trigger scenario, applicable grades, recommended tools, step template, common Q&A handling.
-
-### Assessment
-
-3-dimensional evaluation:
-- **Knowledge Accuracy** (0-1): Checks for factual markers and correctness
-- **Interaction Naturalness** (0-1): Checks for guided questions, encouragement, step-by-step explanation
-- **Personalization** (0-1): Checks for student profile references, difficulty adjustment
+Learner profile evaluation (4 dimensions):
+- **Cognitive Score** — Bloom's level + knowledge mastery
+- **Behavioral Score** — session count + engagement
+- **Emotional Score** — motivation + self-efficacy + mood
+- **Metacognitive Score** — self-regulation + reflection ability
 
 ## CLI Commands
 
@@ -124,13 +123,13 @@ Each skill contains: trigger scenario, applicable grades, recommended tools, ste
 | `/profile` | Display student profile |
 | `/route_stats` | Show routing statistics |
 | `/help` | Show available commands |
-| `/quit` | Exit LebotClaw |
+| `/quit` | Exit ECNUClaw |
 
 ## File Layout
 
 ```
-~/.lebotclaw/
-├── memory.db          # SQLite database (memories + contexts)
+~/.ecnuclaw/
+├── memory.db          # SQLite database (memories + contexts + learner_profile)
 ├── skills.json        # Teaching skill library
 └── history            # CLI command history
 ```

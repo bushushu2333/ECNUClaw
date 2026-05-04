@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.9"
 authors = [
-    {name = "Yizhou Zhou, Jiayin Li, Zhi Zhang", email = "zhangzhi@ecnu.edu.cn"},
+    {name = "Yizhou Zhou", email = "zhouyizhou@stu.ecnu.edu.cn"},
 ]
 keywords = ["education", "learner-profiling", "intelligent-tutoring", "k-12", "ai", "personalized-learning"]
 classifiers = [
@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.scripts]
-ecnuclaw = "lebotclaw.core.cli:main"
+ecnuclaw = "ecnuclaw.core.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
